@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     // ⚠️ Fundamental para GitHub Pages
-    base: isProd ? '/portaldenotas2/' : '/',
+    base: mode === 'production' ? '/portaldenotas2/' : '/',
 
     server: {
       port: 3000,
