@@ -1,0 +1,7 @@
+{
+  "name": "portal-delp",
+  "description": "Portal corporativo de notas Delp - Gestão e envio de notas fiscais com controle de acesso e IA.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
