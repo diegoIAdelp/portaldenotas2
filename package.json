@@ -6,10 +6,9 @@
   "homepage": "https://diegoiadelp.github.io/portaldenotas2",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --outDir docs",
     "preview": "vite preview --strictPort --port 5173",
-    "start": "vite preview --strictPort --port 5173",
-    "deploy": "gh-pages -d dist"
+    "start": "vite preview --strictPort --port 5173"
   },
   "dependencies": {
     "@google/genai": "^1.35.0",
@@ -20,7 +19,6 @@
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "gh-pages": "^6.1.1",
     "typescript": "~5.8.2",
     "vite": "^6.4.1"
   }
