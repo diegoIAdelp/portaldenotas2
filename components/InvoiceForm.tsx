@@ -2,6 +2,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { analyzeInvoiceImage } from '../services/geminiService';
 import { Supplier, ViewType, Invoice, InvoiceStatus } from '../types';
+import { UPLOAD_DIRECTORY } from '../constants';
 
 interface InvoiceFormProps {
   onSuccess: (invoice: any) => void;
@@ -106,14 +107,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess, onNavigate, userId
     e.preventDefault();
     if (!file && !editData) return alert('Por favor, selecione um arquivo.');
 
-    // A string pdfUrl é configurada para apontar obrigatoriamente para a pasta PDF/ dentro do projeto
     const finalFileName = file ? file.name : (editData?.fileName || '');
     const payload = {
       id: editData ? editData.id : Math.random().toString(36).substr(2, 9),
       ...formData,
       docType,
       value: parseFloat(formData.value) || 0,
-      pdfUrl: finalFileName ? `PDF/${finalFileName}` : '',
+      // Script interno consome a constante do diretório
+      pdfUrl: finalFileName ? `${UPLOAD_DIRECTORY}/${finalFileName}` : '',
       fileName: finalFileName,
       uploadedBy: editData ? editData.uploadedBy : userId,
       userName: editData ? editData.userName : userName,
@@ -193,7 +194,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess, onNavigate, userId
 
           <div className="space-y-1.5">
             <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Valor Total (R$)</label>
-            {/* Fix: Changed e to e.target.value for correct type assignment */}
             <input type="number" step="0.01" required className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-red-500 outline-none transition-all text-sm font-black text-red-600 bg-slate-50/50" placeholder="0,00" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} />
           </div>
 

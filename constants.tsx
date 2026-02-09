@@ -4,6 +4,9 @@ import React from 'react';
 export const APP_NAME = "Portal de notas";
 export const APP_SUBTITLE = "Portal corporativo de notas Delp";
 
+// Edite este caminho para mudar a pasta local de armazenamento
+export const UPLOAD_DIRECTORY = "PDF"; 
+
 export const DEFAULT_ADMIN: any = { 
   id: 'admin-master', 
   name: 'Administrador Master', 
