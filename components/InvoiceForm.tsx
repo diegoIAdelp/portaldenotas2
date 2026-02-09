@@ -8,7 +8,7 @@ interface InvoiceFormProps {
   onNavigate: (view: ViewType) => void;
   userId: string;
   userName: string;
-  userEmail?: string; // Prop adicionada para vínculo
+  userEmail?: string; 
   userSector: string;
   suppliers: Supplier[];
   editData?: Invoice | null;
@@ -106,14 +106,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess, onNavigate, userId
     e.preventDefault();
     if (!file && !editData) return alert('Por favor, selecione um arquivo.');
 
-    // O campo pdfUrl agora salva o caminho relativo da pasta PDF dentro do projeto
+    // A string pdfUrl é configurada para apontar obrigatoriamente para a pasta PDF/ dentro do projeto
+    const finalFileName = file ? file.name : (editData?.fileName || '');
     const payload = {
       id: editData ? editData.id : Math.random().toString(36).substr(2, 9),
       ...formData,
       docType,
       value: parseFloat(formData.value) || 0,
-      pdfUrl: file ? `PDF/${file.name}` : (editData?.pdfUrl || ''),
-      fileName: file ? file.name : (editData?.fileName || ''),
+      pdfUrl: finalFileName ? `PDF/${finalFileName}` : '',
+      fileName: finalFileName,
       uploadedBy: editData ? editData.uploadedBy : userId,
       userName: editData ? editData.userName : userName,
       userEmail: editData ? editData.userEmail : userEmail,
@@ -192,64 +193,65 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess, onNavigate, userId
 
           <div className="space-y-1.5">
             <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Valor Total (R$)</label>
+            {/* Fix: Changed e to e.target.value for correct type assignment */}
             <input type="number" step="0.01" required className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-red-500 outline-none transition-all text-sm font-black text-red-600 bg-slate-50/50" placeholder="0,00" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} />
           </div>
 
-          <div className="space-y-3 col-span-1 md:col-span-2 bg-slate-50 p-5 rounded-2xl border-2 border-slate-100">
-            <div className="flex items-center space-x-6 mb-1">
-              <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Vínculo:</label>
-              <div className="flex items-center space-x-6">
-                <label className="flex items-center space-x-2 cursor-pointer group">
-                  <input type="radio" checked={docType === 'OSV'} onChange={() => setDocType('OSV')} className="w-4 h-4 text-red-600 focus:ring-red-500" />
-                  <span className="text-[11px] font-bold text-slate-600 group-hover:text-red-600 transition-colors uppercase">OSV</span>
-                </label>
-                <label className="flex items-center space-x-2 cursor-pointer group">
-                  <input type="radio" checked={docType === 'CONTRATO'} onChange={() => setDocType('CONTRATO')} className="w-4 h-4 text-red-600 focus:ring-red-500" />
-                  <span className="text-[11px] font-bold text-slate-600 group-hover:text-red-600 transition-colors uppercase">CONTRATO</span>
-                </label>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <input 
-                type="text" 
-                required={docType === 'OSV'}
-                className="w-full px-4 py-3 border-2 border-white rounded-xl focus:border-red-500 outline-none transition-all text-sm font-bold" 
-                placeholder={docType === 'OSV' ? "Número da Ordem de Serviço (Obrigatório)" : "OS / Contrato (Opcional)"} 
-                value={formData.orderNumber} 
-                onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })} 
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Tipo de Vínculo</label>
+            <select className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-red-500 outline-none transition-all text-sm font-bold bg-slate-50/50" value={docType} onChange={(e) => setDocType(e.target.value as 'OSV' | 'CONTRATO')}>
+              <option value="OSV">OSV (Ordem de Serviço/Venda)</option>
+              <option value="CONTRATO">CONTRATO / MEDIÇÃO</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Nº Pedido / Contrato (Opcional)</label>
+            <input type="text" className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-red-500 outline-none transition-all text-sm font-bold bg-slate-50/50" placeholder="Ex: 4500000..." value={formData.orderNumber} onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })} />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Observações</label>
-          <textarea className="w-full px-4 py-2 border-2 border-slate-100 rounded-xl focus:border-red-500 outline-none transition-all min-h-[60px] text-sm font-medium bg-slate-50/30" placeholder="Informações adicionais..." value={formData.observations} onChange={(e) => setFormData({ ...formData, observations: e.target.value })} />
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Observações adicionais</label>
+          <textarea className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-red-500 outline-none transition-all text-sm font-medium bg-slate-50/50 h-24 resize-none" placeholder="Informe detalhes importantes sobre esta nota..." value={formData.observations} onChange={(e) => setFormData({ ...formData, observations: e.target.value })} />
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Anexo</label>
-          <div onClick={() => fileInputRef.current?.click()} className={`border-3 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all ${file ? 'border-green-400 bg-green-50' : 'border-slate-200 hover:border-red-400 hover:bg-slate-50'}`}>
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Documento PDF / Imagem</label>
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${file ? 'border-green-400 bg-green-50' : 'border-slate-200 hover:border-red-400 hover:bg-red-50'}`}
+          >
+            <input type="file" ref={fileInputRef} className="hidden" accept="application/pdf,image/*" onChange={handleFileChange} />
             {loading ? (
-              <div className="flex flex-col items-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mb-2"></div><p className="text-[10px] font-bold text-slate-600 uppercase">Processando...</p></div>
+              <div className="flex flex-col items-center">
+                <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="mt-4 text-xs font-black text-red-600 uppercase tracking-widest">IA Analisando...</p>
+              </div>
             ) : file ? (
-              <div className="text-center"><div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 mx-auto mb-2"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></div><p className="text-[11px] font-black text-slate-900 uppercase truncate max-w-[200px]">{file.name}</p></div>
+              <div className="text-center">
+                <svg className="w-10 h-10 text-green-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <p className="text-sm font-bold text-slate-800">{file.name}</p>
+                <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Clique para trocar o arquivo</p>
+              </div>
             ) : (
               <div className="text-center">
-                <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 mx-auto mb-2">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase">PDF ou Imagem da Nota</p>
+                <svg className="w-10 h-10 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                <p className="text-sm font-bold text-slate-600">Arraste ou clique para selecionar</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">PDF ou Imagem (Análise Automática IA)</p>
               </div>
             )}
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,image/*" />
           </div>
         </div>
 
-        <div className="flex gap-4 pt-2">
-           <button type="submit" className="w-full bg-red-600 text-white font-black py-4 rounded-xl hover:bg-red-700 shadow-lg shadow-red-100 transition-all active:scale-95 uppercase text-[11px] tracking-widest">
-             Confirmar Postagem
-           </button>
+        <div className="pt-4">
+          <button
+            type="submit"
+            disabled={loading || (!file && !editData)}
+            className="w-full bg-red-600 text-white font-black py-4 rounded-xl hover:bg-red-700 shadow-xl shadow-red-200 transition-all disabled:opacity-50 uppercase text-sm tracking-widest"
+          >
+            {editData ? 'Salvar Alterações' : 'Postar Nota Fiscal'}
+          </button>
         </div>
       </form>
     </div>
