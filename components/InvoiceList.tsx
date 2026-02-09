@@ -107,8 +107,9 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, user, onUpdateInvoi
 
   const handleSingleDownload = (inv: Invoice) => {
     const link = document.createElement('a');
+    // inv.pdfUrl agora contém o caminho "PDF/arquivo.pdf"
     link.href = inv.pdfUrl;
-    link.download = `NOTA_${inv.invoiceNumber}_${inv.supplierName.substring(0,10).toUpperCase()}.pdf`;
+    link.download = inv.fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -169,7 +170,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, user, onUpdateInvoi
             </div>
             <div className="p-8 space-y-5">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase">Motivo da Pendência</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Motivo da Pendência</label>
                 <textarea 
                   className="w-full h-24 p-4 border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all text-sm font-medium bg-slate-50 resize-none"
                   placeholder="Explique o que deve ser corrigido..."

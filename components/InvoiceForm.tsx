@@ -106,16 +106,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess, onNavigate, userId
     e.preventDefault();
     if (!file && !editData) return alert('Por favor, selecione um arquivo.');
 
+    // O campo pdfUrl agora salva o caminho relativo da pasta PDF dentro do projeto
     const payload = {
       id: editData ? editData.id : Math.random().toString(36).substr(2, 9),
       ...formData,
       docType,
       value: parseFloat(formData.value) || 0,
-      pdfUrl: file ? URL.createObjectURL(file) : (editData?.pdfUrl || ''),
+      pdfUrl: file ? `PDF/${file.name}` : (editData?.pdfUrl || ''),
       fileName: file ? file.name : (editData?.fileName || ''),
       uploadedBy: editData ? editData.uploadedBy : userId,
       userName: editData ? editData.userName : userName,
-      userEmail: editData ? editData.userEmail : userEmail, // Gravando e-mail de notificação
+      userEmail: editData ? editData.userEmail : userEmail,
       userSector: editData ? editData.userSector : userSector,
       createdAt: editData ? editData.createdAt : new Date().toISOString(),
       status: InvoiceStatus.EM_ANALISE,
