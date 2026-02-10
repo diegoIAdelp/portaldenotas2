@@ -131,7 +131,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess, onNavigate, userId
             throw new Error();
           }
         } catch (err) {
-          // Fallback para modo Preview se o servidor não estiver rodando
           console.warn("Servidor offline. Gerando URL temporária para o arquivo.");
           finalPdfUrl = URL.createObjectURL(file);
         }
@@ -178,7 +177,16 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess, onNavigate, userId
       <form onSubmit={handleSubmit} className="p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-1.5 relative">
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fornecedor</label>
+            <div className="flex justify-between items-center">
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fornecedor</label>
+              <button 
+                type="button" 
+                onClick={() => onNavigate('suppliers')}
+                className="text-[9px] font-black text-red-600 uppercase hover:underline"
+              >
+                + Novo Cadastro
+              </button>
+            </div>
             <input
               type="text"
               required
@@ -192,14 +200,21 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess, onNavigate, userId
               }}
               onFocus={() => setShowSupplierDropdown(true)}
             />
-            {showSupplierDropdown && filteredSuppliers.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+            {showSupplierDropdown && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
                 {filteredSuppliers.map(s => (
                   <button key={s.id} type="button" onClick={() => handleSelectSupplier(s)} className="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors border-b last:border-0 border-slate-100">
                     <div className="font-bold text-sm text-slate-800">{s.name}</div>
                     <div className="text-[10px] text-slate-500 font-mono">{s.cnpj}</div>
                   </button>
                 ))}
+                <button 
+                  type="button" 
+                  onClick={() => onNavigate('suppliers')}
+                  className="w-full p-3 text-center text-[10px] font-black text-red-600 uppercase bg-slate-50 hover:bg-red-50 transition-colors"
+                >
+                  Não encontrou? Cadastrar novo fornecedor
+                </button>
               </div>
             )}
           </div>
@@ -226,6 +241,21 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess, onNavigate, userId
               <option value="CONTRATO">CONTRATO / MEDIÇÃO</option>
             </select>
           </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Número do Pedido / OS (Opcional)</label>
+            <input type="text" className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-red-500 outline-none transition-all text-sm font-bold bg-slate-50/50" placeholder="Ex: 12345" value={formData.orderNumber} onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })} />
+          </div>
+
+          <div className="space-y-1.5 md:col-span-2">
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Observações Adicionais (Texto Livre)</label>
+            <textarea 
+              className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-red-500 outline-none transition-all text-sm font-medium bg-slate-50/50 h-24 resize-none" 
+              placeholder="Alguma informação importante sobre esta nota?"
+              value={formData.observations}
+              onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+            />
+          </div>
         </div>
 
         <div className="space-y-1.5">
@@ -247,6 +277,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess, onNavigate, userId
               </div>
             ) : (
               <div className="text-center">
+                <svg className="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                 <p className="text-sm font-bold text-slate-600">Arraste ou clique para selecionar</p>
               </div>
             )}
