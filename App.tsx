@@ -19,41 +19,71 @@ const App: React.FC = () => {
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [isServerMode, setIsServerMode] = useState(false);
 
+  // Efeito para carregar dados iniciais
   useEffect(() => {
-    const savedInvoices = localStorage.getItem('noteflow_invoices');
-    if (savedInvoices) setInvoices(JSON.parse(savedInvoices));
-
-    const savedUsers = localStorage.getItem('noteflow_users');
-    if (savedUsers) {
-      setUsers(JSON.parse(savedUsers));
-    } else {
-      const initialUsers = [
-        { ...DEFAULT_ADMIN, sector: 'DIRETORIA' },
-        { ...MOCK_STANDARD_USER, sector: 'FINANCEIRO' }
-      ];
-      setUsers(initialUsers);
-      localStorage.setItem('noteflow_users', JSON.stringify(initialUsers));
-    }
-
-    const savedSuppliers = localStorage.getItem('noteflow_suppliers');
-    if (savedSuppliers) setSuppliers(JSON.parse(savedSuppliers));
+    const fetchData = async () => {
+      try {
+        // Tenta conectar com o servidor Node.js local
+        const res = await fetch('/api/data');
+        if (!res.ok) throw new Error("Offline");
+        
+        const data = await res.json();
+        setInvoices(data.invoices || []);
+        setSuppliers(data.suppliers || []);
+        setUsers(data.users && data.users.length > 0 ? data.users : [{ ...DEFAULT_ADMIN, sector: 'DIRETORIA' }, { ...MOCK_STANDARD_USER, sector: 'FINANCEIRO' }]);
+        setIsServerMode(true);
+        console.log("✅ Conectado ao servidor local (database.json)");
+      } catch (err) {
+        // Fallback para LocalStorage se o servidor não estiver rodando (Modo Preview)
+        console.warn("⚠️ Servidor local não detectado. Usando armazenamento do navegador (Preview).");
+        setIsServerMode(false);
+        
+        const localInvoices = localStorage.getItem('delp_invoices');
+        const localUsers = localStorage.getItem('delp_users');
+        const localSuppliers = localStorage.getItem('delp_suppliers');
+        
+        if (localInvoices) setInvoices(JSON.parse(localInvoices));
+        if (localSuppliers) setSuppliers(JSON.parse(localSuppliers));
+        if (localUsers) {
+          setUsers(JSON.parse(localUsers));
+        } else {
+          setUsers([{ ...DEFAULT_ADMIN, sector: 'DIRETORIA' }, { ...MOCK_STANDARD_USER, sector: 'FINANCEIRO' }]);
+        }
+      }
+    };
+    fetchData();
   }, []);
+
+  const saveToStorage = async (newData: { invoices: Invoice[], users: User[], suppliers: Supplier[] }) => {
+    if (isServerMode) {
+      try {
+        await fetch('/api/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newData)
+        });
+      } catch (err) {
+        console.error("Erro ao salvar no servidor:", err);
+      }
+    } else {
+      localStorage.setItem('delp_invoices', JSON.stringify(newData.invoices));
+      localStorage.setItem('delp_users', JSON.stringify(newData.users));
+      localStorage.setItem('delp_suppliers', JSON.stringify(newData.suppliers));
+    }
+  };
 
   const handleSaveInvoice = (invoiceData: any) => {
     let updated;
     const exists = invoices.find(i => i.id === invoiceData.id);
-    
     if (exists) {
       updated = invoices.map(i => i.id === invoiceData.id ? { ...invoiceData, status: InvoiceStatus.EM_ANALISE } : i);
-      alert('Nota fiscal atualizada com sucesso!');
     } else {
       updated = [{ ...invoiceData, status: InvoiceStatus.EM_ANALISE }, ...invoices];
-      alert('Nota fiscal postada com sucesso!');
     }
-    
     setInvoices(updated);
-    localStorage.setItem('noteflow_invoices', JSON.stringify(updated));
+    saveToStorage({ invoices: updated, users, suppliers });
     setEditingInvoice(null);
     setView('invoices');
   };
@@ -61,13 +91,13 @@ const App: React.FC = () => {
   const handleUpdateInvoice = (updatedInvoice: Invoice) => {
     const updated = invoices.map(inv => inv.id === updatedInvoice.id ? updatedInvoice : inv);
     setInvoices(updated);
-    localStorage.setItem('noteflow_invoices', JSON.stringify(updated));
+    saveToStorage({ invoices: updated, users, suppliers });
   };
 
   const handleDeleteInvoice = (invoiceId: string) => {
     const updated = invoices.filter(inv => inv.id !== invoiceId);
     setInvoices(updated);
-    localStorage.setItem('noteflow_invoices', JSON.stringify(updated));
+    saveToStorage({ invoices: updated, users, suppliers });
   };
 
   const handleEditRequest = (invoice: Invoice) => {
@@ -77,28 +107,25 @@ const App: React.FC = () => {
 
   const handleUpdateUsers = (newUsers: User[]) => {
     setUsers(newUsers);
-    localStorage.setItem('noteflow_users', JSON.stringify(newUsers));
+    saveToStorage({ invoices, users: newUsers, suppliers });
   };
 
   const handleUpdateSuppliers = (newSuppliers: Supplier[]) => {
     setSuppliers(newSuppliers);
-    localStorage.setItem('noteflow_suppliers', JSON.stringify(newSuppliers));
+    saveToStorage({ invoices, users, suppliers: newSuppliers });
   };
 
   const handleImportFullData = (data: { invoices?: Invoice[], users?: User[], suppliers?: Supplier[] }) => {
-    if (data.invoices) {
-      setInvoices(data.invoices);
-      localStorage.setItem('noteflow_invoices', JSON.stringify(data.invoices));
-    }
-    if (data.users) {
-      setUsers(data.users);
-      localStorage.setItem('noteflow_users', JSON.stringify(data.users));
-    }
-    if (data.suppliers) {
-      setSuppliers(data.suppliers);
-      localStorage.setItem('noteflow_suppliers', JSON.stringify(data.suppliers));
-    }
-    alert('Base de dados restaurada com sucesso!');
+    const payload = {
+      invoices: data.invoices || invoices,
+      users: data.users || users,
+      suppliers: data.suppliers || suppliers
+    };
+    setInvoices(payload.invoices);
+    setUsers(payload.users);
+    setSuppliers(payload.suppliers);
+    saveToStorage(payload);
+    alert('Dados restaurados com sucesso!');
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -119,7 +146,7 @@ const App: React.FC = () => {
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4">
-        <div className="mb-8 animate-in fade-in zoom-in duration-500"><DelpLogoFull className="h-24 scale-125" /></div>
+        <div className="mb-8"><DelpLogoFull className="h-24 scale-125" /></div>
         <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
           <div className="p-8 bg-white border-b border-slate-100 text-center">
             <h1 className="text-3xl font-black text-slate-800 tracking-tighter uppercase">{APP_NAME}</h1>
@@ -136,6 +163,11 @@ const App: React.FC = () => {
             </div>
             <button type="submit" className="w-full bg-red-600 text-white font-black py-4 rounded-2xl hover:bg-red-700 shadow-xl shadow-red-200 transition-all active:scale-[0.98] uppercase text-sm tracking-widest">Entrar no Portal</button>
           </form>
+          <div className="p-4 bg-slate-50 text-center">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+              Status do Servidor: {isServerMode ? '🟢 ONLINE (database.json)' : '🔵 PREVIEW (LocalStorage)'}
+            </span>
+          </div>
         </div>
       </div>
     );
