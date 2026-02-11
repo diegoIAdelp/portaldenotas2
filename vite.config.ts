@@ -6,8 +6,20 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 4444,
-    host: true, // Isso permite que outros computadores na sua rede acessem pelo seu IP
-    strictPort: true
+    host: true,
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4444',
+        changeOrigin: true,
+        secure: false
+      },
+      '/PDF': {
+        target: 'http://localhost:4444',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   preview: {
     port: 4444,
